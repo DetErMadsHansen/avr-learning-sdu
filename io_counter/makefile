@@ -1,0 +1,46 @@
+# ---------- Projektindstillinger ----------
+TARGET		= io_counter01
+MCU			= atmega32a
+PROGRAMMER	= usbasp
+F_CPU		= 1000000UL
+
+CC = avr-gcc
+OBJCOPY = avr-objcopy
+SIZE = avr-size
+AVRDUDE = avrdude
+
+CFLAGS = -mmcu=$(MCU) -DF_CPU=$(F_CPU) -Os -Wall -Wextra -std=c11
+LDFLAGS = -mmcu=$(MCU)
+
+SRC = $(TARGET).c
+OBJ = $(SRC:.c=.o)
+
+# ---------- Standardmål ----------
+all: $(TARGET).hex
+
+# Compile .c -> .o
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Link .o -> .elf
+$(TARGET).elf: $(OBJ)
+	$(CC) $(LDFLAGS) $(OBJ) -o $@
+	$(SIZE) $@
+
+# Convert .elf -> .hex
+$(TARGET).hex: $(TARGET).elf
+	$(OBJCOPY) -O ihex -R .eeprom $< $@
+
+# Flash til chip
+flash: $(TARGET).hex
+	$(AVRDUDE) -c $(PROGRAMMER) -p m32 -U flash:w:$(TARGET).hex:i
+
+# Læs chip-signatur
+probe:
+	$(AVRDUDE) -c $(PROGRAMMER) -p m32
+
+# Ryd op
+clean:
+	rm -f $(OBJ) $(TARGET).elf $(TARGET).hex
+
+.PHONY: all flash clean probe
