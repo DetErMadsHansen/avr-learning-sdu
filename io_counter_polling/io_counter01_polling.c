@@ -1,6 +1,10 @@
 /*
- * Virker. Koden tæller input og gemmer det i en varibel. Variabel værdien udskrives til en 8-bit led række.
+ * Virker ikke. Koden tæller input og gemmer det i en varibel. Variabel værdien udskrives til en 8-bit led række.
+ * Lavet med timer og polling, ChatGPT.
  * Der er bygget videre på en UART koden i io_if. 
+ 
+ 
+ Sæt til Normal Mode (overflow) tabel 15-2
 */
 
 #define F_CPU 1000000UL   // 1 MHz (16000000UL hvis dit board kører 16 MHz)
@@ -12,15 +16,25 @@ void USART_Init( unsigned int baud );
 void USART_Transmit( unsigned char data );
 void USART_SendString(const char *s);
 
+volatile uint16_t ms_counter	= 0;
+
+ISR(TIMER0_OVF_vect) {
+	ms_counter++;
+}
+
 int main(void){
 
-	int counter		= 0;
+	int counter						= 0;
 
 	DDRB	= 0xFF;			// Sæt port b som output.
 	PORTB	|= ~counter;	// Sluk ouput på port b
 
 	DDRC	&= ~(1 << PC2);	// PC2 som input
 	PORTC	|=  (1 << PC2);	// pull-up on
+
+	
+	// Timer opsætning
+	
 
 //	uint8_t led3_state = 0;
 	
@@ -31,7 +45,15 @@ int main(void){
 	// baud 2400 ved 1 MHz, normal mode = 25
 	USART_Init(25);
 
-	while(1){
+	uint16_t start = ms_counter;
+
+
+	while ((ms_counter - start) < 20)
+	{
+		// CPU kan lave noget andet her!
+//	}
+
+//	while(1){
 	if (!(PINC & (1 << PC2)) )   // aktiv low: knap trykket
 	{
 		_delay_ms(20);          // debounce
