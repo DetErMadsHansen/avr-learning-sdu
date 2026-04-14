@@ -15,6 +15,7 @@ void USART_SendString(const char *s);
 int main(void){
 
 	int counter		= 0;
+	
 
 	DDRB	= 0xFF;			// Sæt port b som output.
 	PORTB	|= ~counter;	// Sluk ouput på port b

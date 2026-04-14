@@ -34,7 +34,8 @@ int main(void){
 
 	
 	// Timer opsætning
-	
+	TCCR0	= 0; 
+
 
 //	uint8_t led3_state = 0;
 	

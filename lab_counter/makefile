@@ -1,5 +1,5 @@
 # ---------- Projektindstillinger ----------
-TARGET		= filnavn
+TARGET		= lab_counter01
 MCU			= atmega32a
 PROGRAMMER	= usbasp
 F_CPU		= 1000000UL

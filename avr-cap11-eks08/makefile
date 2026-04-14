@@ -1,5 +1,5 @@
 # ---------- Projektindstillinger ----------
-TARGET		= filnavn
+TARGET		= eks08-interrupt
 MCU			= atmega32a
 PROGRAMMER	= usbasp
 F_CPU		= 1000000UL
