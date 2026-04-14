@@ -15,6 +15,8 @@
 volatile uint8_t n_overflow			= 0;
 volatile uint8_t led_timer_active	= 0;
 
+volatile uint8_t lab_counter		= 0;
+
 // Timer0 overflow interrupt til LED signal.
 ISR(TIMER0_OVF_vect) {
 	if(led_timer_active) {
@@ -31,12 +33,13 @@ ISR(TIMER0_OVF_vect) {
 } // END ISR timer
 
 
-/* Eksternt interrupt på INT0 = PD2
-   Kaldes når sensoren registrerer målstregen */
+// Eksternt interrupt på INT0 = PD2
+// Kaldes når sensoren registrerer målstregen.
 ISR(INT0_vect) {
 	PORTB &= ~(1 << PB7);   // LED tændt (active low)
 	n_overflow = 0;         // start tælling forfra
 	led_timer_active = 1;   // aktiver timer-logikken
+	lab_counter++;			// Tæl en omgang.
 } // END ISR målstregs sensor
 
 
