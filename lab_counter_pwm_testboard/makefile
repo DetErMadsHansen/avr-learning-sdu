@@ -1,8 +1,8 @@
 # ---------- Projektindstillinger ----------
 TARGET		= lab_counter_pwm01
-MCU			= atmega32
+MCU			= atmega32a
 PROGRAMMER	= usbasp
-F_CPU		= 16000000UL
+F_CPU		= 1000000UL
 
 CC = avr-gcc
 OBJCOPY = avr-objcopy

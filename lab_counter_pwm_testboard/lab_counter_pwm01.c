@@ -1,23 +1,21 @@
 /* 
- * Byggede videre på lap_counter_pwm01.c fil
+ * lap_counter.c fil tilpasset til slotcar in- og outputs. 
  * 
- * Debounce via interrupt.
+ * Udviddet med PWM funktionalitet. Sat til fast værdi. 
+ * Tæller omgange ved at registrere sensor input fra målstregen.
+ * Timer til LED - Lys i et sekund når input registreres. Intern interrupt timer
  *
- * Not Working.
+ * LED active low.
+ * PD2 : ekstern interrupt mappede til input knap s11.
+ * PB7 : LED indikator til målstregsregistrering.
+ * PD7 : PWM til motor
+ *
+ * Working.
 */
 
 #define F_CPU 1000000UL
 #include <avr/io.h>
 #include <avr/interrupt.h>
-
-// State machine til debounce
-typedef enum {
-	IDLE,
-	DEBOUNCE_PRESS,
-	PRESSED,
-	DEBOUNCE_RELEASE
-} state_t;
-
 
 volatile uint8_t n_overflow			= 0; // Bruges til at tælle overflow til målstregsindikator LED'en. 
 volatile uint8_t led_timer_active	= 0; // Bruges til at aktiverer timer når målstregen registreres.
@@ -25,14 +23,9 @@ volatile uint8_t led_timer_active	= 0; // Bruges til at aktiverer timer når må
 volatile uint8_t lab_counter		= 0;
 volatile uint8_t stop_counter		= 0;
 
-state_t debounce_state	= IDLE;
-uint16_t debounce_timer	= 0;
 
-
-
-// Timer;  3 sekunder, Timer0 overflow interrupt til LED signal.
+// Timer0 overflow interrupt til LED signal.
 ISR(TIMER0_OVF_vect) {
-
 	if(led_timer_active) {
 		n_overflow++;
 
@@ -51,12 +44,9 @@ ISR(TIMER0_OVF_vect) {
 } // END ISR timer
 
 
-// Knap tryk 
 // Eksternt interrupt på INT0 = PD2
 // Kaldes når sensoren registrerer målstregen.
 ISR(INT0_vect) {
-
-	
 	PORTB &= ~(1 << PB7);   // LED tændt (active low)
 	n_overflow = 0;         // start tælling forfra
 	led_timer_active = 1;   // aktiver timer-logikken
@@ -70,14 +60,20 @@ ISR(INT0_vect) {
 
 int main(void) {
 	// Output pins og porte
-	DDRB	|= (1 << PB7) | (1 << PB0);	// PB7 som output
+	DDRB	|= (1 << PB7) | (1 << PB0);	// PB7 som output Hvad vil jeg bruge PB0 til. Var det en ekstra LED indikator, når bilen var tændt?
 	PORTB	|= (1 << PB7) | (1 << PB0);	// LED slukket, output high
 
 	DDRD	|= (1 << PD7); // PWM test port til motor.
 
 	// Input pins
-	DDRC	&= ~(1 << PD2);	// S11 (PD2) som input
-	PORTC	|=  (1 << PD2);	// pull-up on
+	DDRD	&= ~(1 << PD2);	// S11 (PD2) som input, også PD2 på bil (ben 31).
+	PORTD	|=  (1 << PD2);	// pull-up on
+	
+	// gl. Input pins - Hvorfor har jeg skrevet C i port og DDR?
+//	DDRC	&= ~(1 << PD2);	// S11 (PD2) som input også PD2 på bil (ben 31).
+//	PORTC	|=  (1 << PD2);	// pull-up on
+
+
 
 
 //!	TCCR1A	= (1<<COM1A1) | (0<<COM1A0) | (1<<WGM11) | (0<<WGM10); // PWM test
@@ -109,41 +105,6 @@ int main(void) {
 		}
 	} // END while, superloop
 } // END main
-
-// Function
-switch (debounce_state) {
-	case IDLE:
-		if (!(PINC & (1 << PC0))) {
-			debounce_state = DEBOUNCE_PRESS;                         
-			debounce_timer = ms_counter;
-		}
-	break;
-	case DEBOUNCE_PRESS:
-		if ((ms_counter - debounce_timer) > 20) {
-			if (!(PINC & (1 << PC0))) {
-				PORTB ^= (1 << PB0);
-					debounce_state = PRESSED;
-				} else {
-					debounce_state = IDLE;
-			}
-		}
-	break;
-	case PRESSED:
-		if (PINC & (1 << PC0)) {
-			debounce_state = DEBOUNCE_RELEASE;
-			debounce_timer = ms_counter;
-		}
-	break;
-	case DEBOUNCE_RELEASE:
-		if ((ms_counter - debounce_timer) > 20) {
-			if (PINC & (1 << PC0)) {
-				debounce_state = IDLE;
-			} else {
-				debounce_state = PRESSED;
-			}
-		}
-	break;
-} // END switch case
 
 
 
